@@ -1858,10 +1858,11 @@ function updateDeviceList(devices) {
       li.innerHTML = '<span>'+d.device+'</span><div class="device-status">'+fi+'<span class="status-indicator '+sc+' '+fb+'"></span><span class="waterlevel-value '+wc+' '+bc+'">'+wv+'</span></div>';
       li.addEventListener('click', function(){selectDevice(d.device);});
     } else if (isPres) {
-var s = pressureSettingsCache[d.device]||{minPsi:20,normalPsi:50,maxPsi:80};
-var hasPres = d.pressure !== null && d.pressure !== undefined && d.pressure !== '';
-var pv = hasPres ? Math.round(parseFloat(d.pressure))+' psi' : '-- psi', pc='', bc='';
-if (hasPres) { var p=parseFloat(d.pressure); if(p<s.minPsi){pc='low';bc='blink-alarm';alarm='low';}else if(p>s.maxPsi){pc='high';bc='blink-alarm';alarm='high';}else pc='normal'; }
+      var s = pressureSettingsCache[d.device]||{minPsi:20,normalPsi:50,maxPsi:80};
+var pVal = parseFloat(d.pressure);
+var hasPres = !isNaN(pVal);
+var pv = hasPres ? Math.round(pVal)+' psi' : '-- psi', pc='', bc='';
+if (hasPres) { if(pVal<s.minPsi){pc='low';bc='blink-alarm';alarm='low';}else if(pVal>s.maxPsi){pc='high';bc='blink-alarm';alarm='high';}else pc='normal'; }
 li.innerHTML = '<span>'+d.device+'</span><div class="device-status">'+fi+'<span class="status-indicator '+sc+' '+fb+'"></span><span class="pressure-value '+pc+' '+bc+'">'+pv+'</span></div>';
 li.addEventListener('click', function(){selectDevice(d.device);});
     } else {
