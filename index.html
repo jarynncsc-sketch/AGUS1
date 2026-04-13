@@ -1816,7 +1816,7 @@ function updateMap(devices) {
     else if (rawType !== 'reservoir' && deviceName.includes('reservoir')) effectiveType = 'reservoir';
     var isPres = effectiveType === 'pressure';
     var stat = isPres ? derivePressureStatus(d) : d.status;
-    var f = new ol.Feature({geometry:new ol.geom.Point(coord),name:d.device,status:stat,type:effectiveType,pressure:(d.pressure!==null&&d.pressure!==undefined&&d.pressure!=='')?d.pressure:null,flow:d.flow||null,relay:d.relay||null,button:d.button||null,voltage:d.voltage||null,current:d.current||null,power:d.power||null,energy:d.energy||null,level:d.level||null,firmware:d.firmware||null,lastToggledBy:d.lastToggledBy||null});
+    var f = new ol.Feature({geometry:new ol.geom.Point(coord),name:d.device,status:stat,type:effectiveType,pressure: (d.pressure === null || d.pressure === undefined || d.pressure === '')            ? null            : Number(d.pressure),flow:d.flow||null,relay:d.relay||null,button:d.button||null,voltage:d.voltage||null,current:d.current||null,power:d.power||null,energy:d.energy||null,level:d.level||null,firmware:d.firmware||null,lastToggledBy:d.lastToggledBy||null});
     deviceSource.addFeature(f); deviceMarkers[d.device] = f;
   });
 }
