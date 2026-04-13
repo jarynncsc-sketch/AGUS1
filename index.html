@@ -1562,7 +1562,7 @@ if (!psAnomaly) {
       return [new ol.style.Style({image:new ol.style.Icon({src:'data:image/svg+xml,'+encodeURIComponent(svg),scale:1.2,anchor:[0.5,0.9]})}),new ol.style.Style({text:new ol.style.Text({text:name,font:'bold 16px Arial',fill:new ol.style.Fill({color:'#004080'}),stroke:new ol.style.Stroke({color:'#ffffff',width:3}),offsetY:25})})];
     }
 if (type === 'pressure') {
-var pv = f.get('pressure'), pt = (pv !== undefined && pv !== null && pv !== '') ? pv+' psi' : '-- psi';
+var pv = f.get('pressure'); var isValid = pv !== undefined && pv !== null && pv !== '' && !isNaN(parseFloat(pv)); var pt = isValid ? parseFloat(pv) + ' psi' : '-- psi';
   var ps = pressureSettingsCache[name]||{minPsi:20,normalPsi:50,maxPsi:80}, pn = parseFloat(pv), pC='#1d4ed8', pA=false;
   if (!isNaN(pn)) { if(pn<ps.minPsi){pC='#f97316';pA=true;} else if(pn>ps.maxPsi){pC='#ef4444';pA=true;} }
   var psk = new ol.style.Stroke({color:pA&&blinkOn?'#ffffff':'#002b5c',width:pA&&blinkOn?6:4});
@@ -1861,9 +1861,16 @@ function updateDeviceList(devices) {
       var s = pressureSettingsCache[d.device]||{minPsi:20,normalPsi:50,maxPsi:80};
 var pVal = parseFloat(d.pressure);
 var hasPres = !isNaN(pVal);
-var pv = (d.pressure !== undefined && d.pressure !== null && d.pressure !== '') ? Math.round(parseFloat(d.pressure))+' psi' : '-- psi';
-var pc='', bc='';
-if (d.pressure !== undefined && d.pressure !== null && d.pressure !== '') { var p=parseFloat(d.pressure); if(p<s.minPsi){pc='low';bc='blink-alarm';alarm='low';}else if(p>s.maxPsi){pc='high';bc='blink-alarm';alarm='high';}else pc='normal'; }
+var raw = d.pressure;
+var isValid = raw !== undefined && raw !== null && raw !== '' && !isNaN(parseFloat(raw));
+var pv = isValid ? Math.round(parseFloat(raw)) + ' psi' : '-- psi';
+var pc = '', bc = '';
+if (isValid) {
+  var p = parseFloat(raw);
+  if (p < s.minPsi) { pc = 'low'; bc = 'blink-alarm'; alarm = 'low'; }
+  else if (p > s.maxPsi) { pc = 'high'; bc = 'blink-alarm'; alarm = 'high'; }
+  else pc = 'normal';
+}
 li.innerHTML = '<span>'+d.device+'</span><div class="device-status">'+fi+'<span class="status-indicator '+sc+' '+fb+'"></span><span class="pressure-value '+pc+' '+bc+'">'+pv+'</span></div>';
       li.addEventListener('click', function(){selectDevice(d.device);});
     } else {
