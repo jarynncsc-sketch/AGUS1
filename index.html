@@ -1540,16 +1540,16 @@ if (isPS) {
       // Detect anomaly: Offline, Fault, button fault, or pressure out of range
       var psAnomaly = status !== 'Online' || f.get('button');
       var psAnomalyColor = (status==='Fault' || f.get('button')) ? '#ff0033' : '#ffa500';
-      if (!psAnomaly) {
-        var pPres = f.get('pressure');
-        var pPS = pressureSettingsCache[name] || {minPsi:20, maxPsi:80};
-        var pPN = parseFloat(pPres);
-        if (!isNaN(pPN) && (pPN < pPS.minPsi || pPN > pPS.maxPsi)) {
-          psAnomaly = true;
-          psAnomalyColor = pPN < pPS.minPsi ? '#f97316' : '#ef4444';
-          psC = psAnomalyColor;
-        }
-      }
+if (!psAnomaly) {
+  var pPres = f.get('pressure');
+  var pPS = pressureSettingsCache[name] || {minPsi:20, maxPsi:80};
+  var pPN = parseFloat(pPres);
+  if (!isNaN(pPN) && (pPN < pPS.minPsi || pPN > pPS.maxPsi)) {
+    psAnomaly = true;
+    psAnomalyColor = pPN < pPS.minPsi ? '#f97316' : '#ef4444';
+    psC = psAnomalyColor;
+  }
+}
       var ringOp = psAnomaly ? (blinkOn ? '1' : '0') : '0';
       var svg = '<svg viewBox="-7 -7 46 46" width="56" height="56" xmlns="http://www.w3.org/2000/svg">'
         + '<circle cx="16" cy="16" r="24" fill="none" stroke="'+psAnomalyColor+'" stroke-width="4.5" opacity="'+ringOp+'"/>'
@@ -1561,13 +1561,14 @@ if (isPS) {
         + '</svg>';
       return [new ol.style.Style({image:new ol.style.Icon({src:'data:image/svg+xml,'+encodeURIComponent(svg),scale:1.2,anchor:[0.5,0.9]})}),new ol.style.Style({text:new ol.style.Text({text:name,font:'bold 16px Arial',fill:new ol.style.Fill({color:'#004080'}),stroke:new ol.style.Stroke({color:'#ffffff',width:3}),offsetY:25})})];
     }
-    if (type === 'pressure') {
-      var pv = f.get('pressure'); var pt = (pv !== null && pv !== undefined && pv !== '') ? pv+' psi' : '-- psi';
-      var ps = pressureSettingsCache[name]||{minPsi:20,normalPsi:50,maxPsi:80}, pn = parseFloat(pv), pC='#1d4ed8', pA=false;
-      if (!isNaN(pn)) { if(pn<ps.minPsi){pC='#f97316';pA=true;} else if(pn>ps.maxPsi){pC='#ef4444';pA=true;} }
-      var psk = new ol.style.Stroke({color:pA&&blinkOn?'#ffffff':'#002b5c',width:pA&&blinkOn?6:4});
-      return [new ol.style.Style({image:new ol.style.Circle({radius:32,fill:new ol.style.Fill({color:pC}),stroke:psk}),text:new ol.style.Text({text:pt,font:'bold 16px Arial',fill:new ol.style.Fill({color:'#ffffff'}),stroke:new ol.style.Stroke({color:'#002b5c',width:4})})}),new ol.style.Style({text:new ol.style.Text({text:name,font:'bold 14px Arial',fill:new ol.style.Fill({color:'#004080'}),stroke:new ol.style.Stroke({color:'#ffffff',width:3}),offsetY:55})})];
-    }
+if (type === 'pressure') {
+  var pv = f.get('pressure');
+  var pt = (pv !== undefined && pv !== null && pv !== '') ? pv + ' psi' : '-- psi';
+  var ps = pressureSettingsCache[name]||{minPsi:20,normalPsi:50,maxPsi:80}, pn = parseFloat(pv), pC='#1d4ed8', pA=false;
+  if (!isNaN(pn)) { if(pn<ps.minPsi){pC='#f97316';pA=true;} else if(pn>ps.maxPsi){pC='#ef4444';pA=true;} }
+  var psk = new ol.style.Stroke({color:pA&&blinkOn?'#ffffff':'#002b5c',width:pA&&blinkOn?6:4});
+  return [new ol.style.Style({image:new ol.style.Circle({radius:32,fill:new ol.style.Fill({color:pC}),stroke:psk}),text:new ol.style.Text({text:pt,font:'bold 16px Arial',fill:new ol.style.Fill({color:'#ffffff'}),stroke:new ol.style.Stroke({color:'#002b5c',width:4})})}),new ol.style.Style({text:new ol.style.Text({text:name,font:'bold 14px Arial',fill:new ol.style.Fill({color:'#004080'}),stroke:new ol.style.Stroke({color:'#ffffff',width:3}),offsetY:55})})];
+}
     if (status==='Fault'){fc='red';sc=blinkOn?'red':'transparent';sw=3;text=name;} else if(status==='Offline'){fc='orange';text=name;} else {fc='green';text=name;}
   }
   return [new ol.style.Style({image:new ol.style.Circle({radius:Math.max(8,Math.min(20,sz*4)),fill:new ol.style.Fill({color:fc}),stroke:new ol.style.Stroke({color:sc,width:sw})})}),new ol.style.Style({text:new ol.style.Text({text:text,font:'bold 12px sans-serif',offsetY:-25,fill:new ol.style.Fill({color:'#000'}),stroke:new ol.style.Stroke({color:'#fff',width:3})})})];
@@ -1861,10 +1862,11 @@ function updateDeviceList(devices) {
       var s = pressureSettingsCache[d.device]||{minPsi:20,normalPsi:50,maxPsi:80};
 var pVal = parseFloat(d.pressure);
 var hasPres = !isNaN(pVal);
-var pv = hasPres ? Math.round(pVal)+' psi' : '-- psi', pc='', bc='';
-if (hasPres) { if(pVal<s.minPsi){pc='low';bc='blink-alarm';alarm='low';}else if(pVal>s.maxPsi){pc='high';bc='blink-alarm';alarm='high';}else pc='normal'; }
+var pv = (d.pressure !== undefined && d.pressure !== null && d.pressure !== '') ? Math.round(parseFloat(d.pressure))+' psi' : '-- psi';
+var pc='', bc='';
+if (d.pressure !== undefined && d.pressure !== null && d.pressure !== '') { var p=parseFloat(d.pressure); if(p<s.minPsi){pc='low';bc='blink-alarm';alarm='low';}else if(p>s.maxPsi){pc='high';bc='blink-alarm';alarm='high';}else pc='normal'; }
 li.innerHTML = '<span>'+d.device+'</span><div class="device-status">'+fi+'<span class="status-indicator '+sc+' '+fb+'"></span><span class="pressure-value '+pc+' '+bc+'">'+pv+'</span></div>';
-li.addEventListener('click', function(){selectDevice(d.device);});
+      li.addEventListener('click', function(){selectDevice(d.device);});
     } else {
       var serverRelay = d.relay;
       var serverRelayOn = serverRelay == 1 || serverRelay === true || serverRelay === '1' || (typeof serverRelay === 'string' && serverRelay.toUpperCase() === 'ON');
