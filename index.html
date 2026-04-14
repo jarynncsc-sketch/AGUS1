@@ -1889,27 +1889,6 @@ if (isRes) {
     })
   })];
 }
-      det.innerHTML =
-        '<div style="display:flex;gap:12px;min-width:460px;">' +
-          '<div style="flex:1;min-width:180px;">' +
-            '<b style="font-size:14px;color:#002b5c;">' + d.device + '</b><br>' +
-            '<span style="display:inline-block;background:#4ade80;color:white;padding:2px 8px;border-radius:12px;font-size:11px;margin-bottom:8px;">🏭 RESERVOIR</span><br>' +
-            'Status: ' + effSt + ' ' + fb + '<br>' +
-            'Water Level: <b style="color:' + lC + ';">' + (d.level || '0') + ' m³</b> ' +
-            '<span class="' + lB + '" style="background:' + lC + ';color:white;font-size:10px;padding:1px 5px;border-radius:10px;font-weight:bold;">' + lT + '</span><br>' +
-            '<button onclick="showHistoricalGraph(\'' + escapeForAttr(d.device) + '\',\'reservoir\')" style="margin-top:7px;width:100%;padding:5px 0;background:#4ade80;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;">📊 View Graph</button>' +
-          '</div>' +
-          '<div style="flex:1;min-width:195px;border-left:2px solid #e5eef9;padding-left:14px;">' +
-            '<div style="font-size:11.5px;font-weight:800;color:#5575a0;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">⚙️ Water Level Thresholds</div>' +
-            '<div class="pressure-thresholds-badge">' +
-              '<span class="pth-item low">🟠 Low: &lt; ' + r.minLevel + ' m³</span>' +
-              '<span class="pth-item normal">🟢 Normal: ' + r.minLevel + '–' + r.maxLevel + ' m³</span>' +
-              '<span class="pth-item high">🔴 Overflow: &gt; ' + r.maxLevel + ' m³</span>' +
-            '</div>' +
-            (r.updatedBy ? '<div style="font-size:11px;color:#7a8fa6;margin-bottom:6px;">Last updated by <b>' + r.updatedBy + '</b>' + (r.updatedAt ? ' on ' + r.updatedAt : '') + '</div>' : '') +
-            '<button class="rs-gear-btn" onclick="openReservoirSettings(\'' + escapeForAttr(d.device) + '\')">⚙️ Edit Reservoir Thresholds</button>' +
-          '</div>' +
-        '</div>';
 // ── PRESSURE SENSOR ──────────────────────────────────────────
     } else if (isPres) {
       det.innerHTML =
