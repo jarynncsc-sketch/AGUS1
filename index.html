@@ -1555,33 +1555,30 @@ if (isPS) {
   
   var _rawName = name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
   var _nameD = _rawName.length > 32 ? _rawName.slice(0,30) + '..' : _rawName;
-  var _nameFontSize = _rawName.length > 25 ? 10 : 11.5; // larger for HD
+  var _nameFontSize = _rawName.length > 25 ? 9 : 10.5;
   
   var _psiC='#1d4ed8';
   if (_psiRaw!=null){var _pn=parseFloat(_psiRaw),_pt=pressureSettingsCache[name]||{minPsi:20,maxPsi:80};if(!isNaN(_pn)){if(_pn<_pt.minPsi)_psiC='#f97316';else if(_pn>_pt.maxPsi)_psiC='#ef4444';}}
   
-  // Slightly taller card: 135px (was 130)
-  var _W=172,_cY=28,_cH=135,_tH=_cY+_cH+8;
+  // Increased card height from 120 to 130
+  var _W=172,_cY=28,_cH=130,_tH=_cY+_cH+8;
   var _rOp=psAnomaly?(blinkOn?'0.9':'0'):'0';
   
-  // Adjusted Y positions for larger fonts
-  var _dataOffset = 10; // extra offset for HD
-  var _presLabelY = _cY+40+_dataOffset;     // 50
-  var _presValueY = _cY+60+_dataOffset;     // 70
-  var _flowLabelY = _cY+40+_dataOffset;     // 50
-  var _flowValueY = _cY+60+_dataOffset;     // 70
-  var _voltLabelY = _cY+85+_dataOffset;     // 95
-  var _voltValueY = _cY+105+_dataOffset;    // 115
-  var _currLabelY = _cY+85+_dataOffset;     // 95
-  var _currValueY = _cY+105+_dataOffset;    // 115
-  var _toggleY = _cY+122+_dataOffset;       // 132
+  // Data section shifted down by 8px
+  var _dataOffset = 8;
+  var _presLabelY = _cY+40+_dataOffset;     // was 40 -> 48
+  var _presValueY = _cY+57+_dataOffset;     // was 57 -> 65
+  var _flowLabelY = _cY+40+_dataOffset;     // 48
+  var _flowValueY = _cY+57+_dataOffset;     // 65
+  var _voltLabelY = _cY+81+_dataOffset;     // was 81 -> 89
+  var _voltValueY = _cY+97+_dataOffset;     // was 97 -> 105
+  var _currLabelY = _cY+81+_dataOffset;     // 89
+  var _currValueY = _cY+97+_dataOffset;     // 105
+  var _toggleY = _cY+112+_dataOffset;       // was 112 -> 120
   
-  // Divider lines
-  var _line1Y = _cY+72+_dataOffset;         // 82
-  var _line2Y = _cY+112+_dataOffset;        // 122
-  
-  // Improved font stack for HD clarity
-  var _fontStack = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  // Divider lines adjusted
+  var _line1Y = _cY+69+_dataOffset;         // was 69 -> 77
+  var _line2Y = _cY+105+_dataOffset;        // was 105 -> 113
   
   var _svg='<svg viewBox="0 0 '+_W+' '+_tH+'" width="'+_W+'" height="'+_tH+'" xmlns="http://www.w3.org/2000/svg">'
     +'<circle cx="'+(_W/2)+'" cy="'+_cY+'" r="22" fill="none" stroke="'+psAnomalyColor+'" stroke-width="3.5" opacity="'+_rOp+'"/>'
@@ -1589,37 +1586,41 @@ if (isPS) {
     +'<rect x="1" y="'+_cY+'" width="'+(_W-2)+'" height="'+_cH+'" rx="10" fill="white" stroke="'+psC+'" stroke-width="2"/>'
     +'<rect x="1" y="'+_cY+'" width="'+(_W-2)+'" height="27" rx="10" fill="'+psC+'" opacity="0.12"/>'
     +'<rect x="1" y="'+(_cY+27)+'" width="'+(_W-2)+'" height="8" fill="'+psC+'" opacity="0.12"/>'
-    +'<text x="'+(_W/2)+'" y="'+(_cY+27)+'" text-anchor="middle" font-family="'+_fontStack+'" font-size="'+_nameFontSize+'" font-weight="800" fill="'+psC+'">'+_nameD+'</text>'
+    +'<text x="'+(_W/2)+'" y="'+(_cY+27)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="'+_nameFontSize+'" font-weight="900" fill="'+psC+'">'+_nameD+'</text>'
     +'<circle cx="'+(_W-13)+'" cy="'+(_cY+10)+'" r="5" fill="'+psC+'"/>'
     +(psAnomaly&&blinkOn?'<circle cx="'+(_W-13)+'" cy="'+(_cY+10)+'" r="8" fill="none" stroke="'+psAnomalyColor+'" stroke-width="1.5" opacity="0.75"/>':'')
     +'<circle cx="'+(_W/2)+'" cy="'+_cY+'" r="15" fill="'+psC+'" stroke="white" stroke-width="2.5"/>'
-    +'<text x="'+(_W/2)+'" y="'+(_cY+5)+'" text-anchor="middle" font-family="'+_fontStack+'" font-size="15" fill="white">\u2699</text>'
+    +'<text x="'+(_W/2)+'" y="'+(_cY+5)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="white">\u2699</text>'
     
-    // Dividers
+    // First horizontal divider (below name, above pressure)
     +'<line x1="'+(_W/2)+'" y1="'+(_cY+27)+'" x2="'+(_W/2)+'" y2="'+_line1Y+'" stroke="#e2e8f0" stroke-width="1"/>'
     +'<line x1="8" y1="'+_line1Y+'" x2="'+(_W-8)+'" y2="'+_line1Y+'" stroke="#e2e8f0" stroke-width="1"/>'
+    
+    // Second horizontal divider (between pressure/flow and voltage/current)
     +'<line x1="'+(_W/2)+'" y1="'+_line1Y+'" x2="'+(_W/2)+'" y2="'+_line2Y+'" stroke="#e2e8f0" stroke-width="1"/>'
     +'<line x1="8" y1="'+_line2Y+'" x2="'+(_W-8)+'" y2="'+_line2Y+'" stroke="#e2e8f0" stroke-width="1"/>'
+    
+    // Third horizontal divider (below voltage/current)
     +'<line x1="'+(_W/2)+'" y1="'+_line2Y+'" x2="'+(_W/2)+'" y2="'+(_cY+_cH-8)+'" stroke="#e2e8f0" stroke-width="1"/>'
     
-    // PRESSURE label (bigger)
-    +'<text x="10" y="'+_presLabelY+'" font-family="'+_fontStack+'" font-size="9" fill="#475569" font-weight="700">PRESSURE</text>'
-    +'<text x="10" y="'+_presValueY+'" font-family="'+_fontStack+'" font-size="14" fill="'+_psiC+'" font-weight="800">'+_psiStr+'</text>'
+    // PRESSURE
+    +'<text x="10" y="'+_presLabelY+'" font-family="Arial,sans-serif" font-size="8" fill="#94a3b8" font-weight="700">PRESSURE</text>'
+    +'<text x="10" y="'+_presValueY+'" font-family="Arial,sans-serif" font-size="13" fill="'+_psiC+'" font-weight="800">'+_psiStr+'</text>'
     
-    // FLOW label
-    +'<text x="'+(_W/2+6)+'" y="'+_flowLabelY+'" font-family="'+_fontStack+'" font-size="9" fill="#475569" font-weight="700">FLOW</text>'
-    +'<text x="'+(_W/2+6)+'" y="'+_flowValueY+'" font-family="'+_fontStack+'" font-size="14" fill="#0ea5e9" font-weight="800">'+_lpsStr+'</text>'
+    // FLOW
+    +'<text x="'+(_W/2+6)+'" y="'+_flowLabelY+'" font-family="Arial,sans-serif" font-size="8" fill="#94a3b8" font-weight="700">FLOW</text>'
+    +'<text x="'+(_W/2+6)+'" y="'+_flowValueY+'" font-family="Arial,sans-serif" font-size="13" fill="#0ea5e9" font-weight="800">'+_lpsStr+'</text>'
     
-    // VOLTAGE label
-    +'<text x="10" y="'+_voltLabelY+'" font-family="'+_fontStack+'" font-size="9" fill="#475569" font-weight="700">VOLTAGE</text>'
-    +'<text x="10" y="'+_voltValueY+'" font-family="'+_fontStack+'" font-size="14" fill="#16a34a" font-weight="800">'+_voltStr+'</text>'
+    // VOLTAGE
+    +'<text x="10" y="'+_voltLabelY+'" font-family="Arial,sans-serif" font-size="8" fill="#94a3b8" font-weight="700">VOLTAGE</text>'
+    +'<text x="10" y="'+_voltValueY+'" font-family="Arial,sans-serif" font-size="13" fill="#16a34a" font-weight="800">'+_voltStr+'</text>'
     
-    // CURRENT label
-    +'<text x="'+(_W/2+6)+'" y="'+_currLabelY+'" font-family="'+_fontStack+'" font-size="9" fill="#475569" font-weight="700">CURRENT</text>'
-    +'<text x="'+(_W/2+6)+'" y="'+_currValueY+'" font-family="'+_fontStack+'" font-size="14" fill="#ea580c" font-weight="800">'+_ampStr+'</text>'
+    // CURRENT
+    +'<text x="'+(_W/2+6)+'" y="'+_currLabelY+'" font-family="Arial,sans-serif" font-size="8" fill="#94a3b8" font-weight="700">CURRENT</text>'
+    +'<text x="'+(_W/2+6)+'" y="'+_currValueY+'" font-family="Arial,sans-serif" font-size="13" fill="#ea580c" font-weight="800">'+_ampStr+'</text>'
     
-    // Last toggle by
-    +'<text x="10" y="'+_toggleY+'" font-family="'+_fontStack+'" font-size="9" fill="#334155" font-weight="600">Last toggle by: '+_togStr+'</text>'
+    // LAST TOGGLE BY
+    +'<text x="10" y="'+_toggleY+'" font-family="Arial,sans-serif" font-size="8.5" fill="#475569">Last toggle by: '+_togStr+'</text>'
     
     // Bottom pointer
     +'<polygon points="'+(_W/2-7)+','+(_cY+_cH)+' '+(_W/2+7)+','+(_cY+_cH)+' '+(_W/2)+','+(_cY+_cH+8)+'" fill="white"/>'
@@ -1737,159 +1738,38 @@ if (!isNaN(llvl)) {
 }
     det.style.pointerEvents = 'auto';
  
-// ── RESERVOIR ────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// REPLACE the entire  if (isRes) { ... }  block in the clusterLayer style.
-//
-// All thresholds come from  reservoirThresholdsCache[name]  — populated by
-// initReservoirThresholdsFromServer() and the Reservoir Threshold modal.
-// Nothing is hardcoded. Each reservoir uses its own maxLevel / minLevel.
-// ─────────────────────────────────────────────────────────────────────────────
-
-if (isRes) {
-  var level = f.get('level');
-  var lv    = parseFloat(level);
-
-  // Per-reservoir thresholds — set via the Reservoir Threshold modal
-  var _thr    = reservoirThresholdsCache[name];
-  var _minLvl = (_thr && _thr.minLevel != null) ? parseFloat(_thr.minLevel) : null;
-  var _maxLvl = (_thr && _thr.maxLevel != null) ? parseFloat(_thr.maxLevel) : null;
-
-  // Status colour — only evaluate alarm when both thresholds are known
-  var rfC = '#22c55e', rA = false;
-  if (!isNaN(lv) && _minLvl !== null && _maxLvl !== null) {
-    if      (lv < _minLvl) { rfC = '#f97316'; rA = true; }
-    else if (lv > _maxLvl) { rfC = '#ef4444'; rA = true; }
-  }
-
-  // Fill % — maxLevel = "full tank" for this reservoir
-  // If threshold not configured yet, show an empty tank with a "?" label
-  var _hasThresh = (_maxLvl !== null && _maxLvl > 0);
-  var _pct = (_hasThresh && !isNaN(lv))
-             ? Math.min(100, Math.max(0, (lv / _maxLvl) * 100))
-             : 0;
-  var _wlt = !isNaN(lv) ? lv + ' m\u00B3' : '-- m\u00B3';
-
-  // SVG tank dimensions
-  var _W = 90, _tX = 5, _tY = 8, _tW = 80, _tH = 65;
-  var _totalH = _tY + _tH + 20;
-  var _fillH  = Math.round((_pct / 100) * _tH);
-  var _fillY  = _tY + _tH - _fillH;
-
-  // Water colour
-  var _wC = !rA
-    ? 'rgba(96,200,240,0.72)'
-    : (lv < _minLvl ? 'rgba(249,115,22,0.50)' : 'rgba(239,68,68,0.50)');
-
-  // Unique clipPath id per device
-  var _cId = 'rc' + name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
-
-  // Water body with wavy top surface
-  var _wfill = '';
-  if (_fillH > 1) {
-    var _wy    = _fillY;
-    var _wpath = 'M ' + _tX + ',' + _wy
-               + ' q ' + Math.round(_tW * 0.25) + ',-5 ' + Math.round(_tW * 0.5) + ',0'
-               + ' q ' + Math.round(_tW * 0.25) + ',5 '  + Math.round(_tW * 0.5) + ',0'
-               + ' V ' + (_tY + _tH) + ' H ' + _tX + ' Z';
-    _wfill = '<clipPath id="' + _cId + '">'
-           +   '<rect x="' + _tX + '" y="' + _tY
-           +   '" width="' + _tW + '" height="' + _tH + '" rx="4"/>'
-           + '</clipPath>'
-           + '<path d="' + _wpath + '" fill="' + _wC
-           + '" clip-path="url(#' + _cId + ')"/>';
-  }
-
-  // Scale grid lines — values come from per-reservoir maxLevel, not hardcoded
-  var _grid = '';
-  if (_hasThresh) {
-    _grid = [0.25, 0.5, 0.75].map(function(p) {
-      var gy     = Math.round(_tY + _tH * (1 - p));
-      var gLabel = Math.round(p * _maxLvl);        // e.g. 25% of THIS reservoir's max
-      return '<line x1="' + _tX + '" y1="' + gy + '" x2="' + (_tX + _tW) + '" y2="' + gy
-           + '" stroke="rgba(100,150,200,0.25)" stroke-width="0.8"/>'
-           + '<text x="' + (_tX + 3) + '" y="' + (gy - 2)
-           + '" font-family="Arial" font-size="8" fill="rgba(0,43,92,0.40)">'
-           + gLabel + '</text>';
-    }).join('');
-  }
-
-  // Alarm blink ring
-  var _ring = (rA && blinkOn)
-    ? '<rect x="1" y="3" width="' + (_W - 2) + '" height="' + (_tH + 8) + '"'
-    +   ' rx="7" fill="none" stroke="' + rfC + '" stroke-width="3.5" opacity="0.75"/>'
-    : '';
-
-  var _bw  = (rA && blinkOn) ? 3.5 : 2.5;
-  var _nd  = name.length > 16 ? name.slice(0, 14) + '..' : name;
-
-  // Dashed water-level line when partially filled
-  var _wline = (_fillH > 1 && _fillH < _tH)
-    ? '<line x1="' + _tX + '" y1="' + _fillY
-    + '" x2="' + (_tX + _tW) + '" y2="' + _fillY
-    + '" stroke="' + rfC + '" stroke-width="1.2" stroke-dasharray="4,2" opacity="0.7"/>'
-    : '';
-
-  // Percentage label — "Not configured" when threshold modal hasn't been saved yet
-  var _pctLabel = _hasThresh ? (Math.round(_pct) + '% full') : 'Set threshold';
-  var _pctColor = _hasThresh ? '#334155' : '#94a3b8';
-
-  var _svg =
-      '<svg viewBox="0 0 ' + _W + ' ' + _totalH + '"'
-    + ' width="' + _W + '" height="' + _totalH + '"'
-    + ' xmlns="http://www.w3.org/2000/svg">'
-
-    + _ring
-
-    // Tank background
-    + '<rect x="' + _tX + '" y="' + _tY
-    + '" width="' + _tW + '" height="' + _tH + '" rx="4" fill="#f0f9ff"/>'
-
-    // Water fill
-    + _wfill
-
-    // Scale grid (per-reservoir m³ values)
-    + _grid
-
-    // Tank border
-    + '<rect x="' + _tX + '" y="' + _tY
-    + '" width="' + _tW + '" height="' + _tH + '" rx="4"'
-    + ' fill="none" stroke="' + rfC + '" stroke-width="' + _bw + '"/>'
-
-    // Water-level dashed line
-    + _wline
-
-    // Volume text  e.g. "95 m³"
-    + '<text x="' + (_tX + _tW / 2) + '" y="' + (_tY + _tH / 2 + 5) + '"'
-    + ' text-anchor="middle" font-family="Arial" font-size="13" font-weight="800"'
-    + ' fill="#002b5c" stroke="white" stroke-width="3" paint-order="stroke">'
-    + _wlt + '</text>'
-
-    // Percentage text — uses per-reservoir maxLevel
-    + '<text x="' + (_tX + _tW / 2) + '" y="' + (_tY + _tH / 2 + 19) + '"'
-    + ' text-anchor="middle" font-family="Arial" font-size="10"'
-    + ' fill="' + _pctColor + '" stroke="white" stroke-width="2.5" paint-order="stroke">'
-    + _pctLabel + '</text>'
-
-    // Device name
-    + '<text x="' + (_W / 2) + '" y="' + (_totalH - 4) + '"'
-    + ' text-anchor="middle" font-family="Arial" font-size="11" font-weight="700"'
-    + ' fill="#004080" stroke="white" stroke-width="2" paint-order="stroke">'
-    + _nd + '</text>'
-
-    + '</svg>';
-
-  return [new ol.style.Style({
-    image: new ol.style.Icon({
-      src: 'data:image/svg+xml,' + encodeURIComponent(_svg),
-      scale: 1,
-      anchor: [0.5, 1],
-      anchorXUnits: 'fraction',
-      anchorYUnits: 'fraction'
-    })
-  })];
-}
-// ── PRESSURE SENSOR ──────────────────────────────────────────
+    // ── RESERVOIR ────────────────────────────────────────────────
+    if (isRes) {
+      var wv = (d.level !== undefined && d.level !== null && d.level !== '')
+               ? Math.round(parseFloat(d.level)) + ' m³' : '-- m³';
+      var wc = '';
+      if (d.level !== undefined && d.level !== null && d.level !== '') {
+        var _lv = parseFloat(d.level);
+        if (_lv < r.minLevel) wc = 'low'; else if (_lv > r.maxLevel) wc = 'high'; else wc = 'normal';
+      }
+      det.innerHTML =
+        '<div style="display:flex;gap:12px;min-width:460px;">' +
+          '<div style="flex:1;min-width:180px;">' +
+            '<b style="font-size:14px;color:#002b5c;">' + d.device + '</b><br>' +
+            '<span style="display:inline-block;background:#4ade80;color:white;padding:2px 8px;border-radius:12px;font-size:11px;margin-bottom:8px;">🏭 RESERVOIR</span><br>' +
+            'Status: ' + effSt + ' ' + fb + '<br>' +
+            'Water Level: <b style="color:' + lC + ';">' + (d.level || '0') + ' m³</b> ' +
+            '<span class="' + lB + '" style="background:' + lC + ';color:white;font-size:10px;padding:1px 5px;border-radius:10px;font-weight:bold;">' + lT + '</span><br>' +
+            '<button onclick="showHistoricalGraph(\'' + escapeForAttr(d.device) + '\',\'reservoir\')" style="margin-top:7px;width:100%;padding:5px 0;background:#4ade80;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;">📊 View Graph</button>' +
+          '</div>' +
+          '<div style="flex:1;min-width:195px;border-left:2px solid #e5eef9;padding-left:14px;">' +
+            '<div style="font-size:11.5px;font-weight:800;color:#5575a0;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">⚙️ Water Level Thresholds</div>' +
+            '<div class="pressure-thresholds-badge">' +
+              '<span class="pth-item low">🟠 Low: &lt; ' + r.minLevel + ' m³</span>' +
+              '<span class="pth-item normal">🟢 Normal: ' + r.minLevel + '–' + r.maxLevel + ' m³</span>' +
+              '<span class="pth-item high">🔴 Overflow: &gt; ' + r.maxLevel + ' m³</span>' +
+            '</div>' +
+            (r.updatedBy ? '<div style="font-size:11px;color:#7a8fa6;margin-bottom:6px;">Last updated by <b>' + r.updatedBy + '</b>' + (r.updatedAt ? ' on ' + r.updatedAt : '') + '</div>' : '') +
+            '<button class="rs-gear-btn" onclick="openReservoirSettings(\'' + escapeForAttr(d.device) + '\')">⚙️ Edit Reservoir Thresholds</button>' +
+          '</div>' +
+        '</div>';
+ 
+    // ── PRESSURE SENSOR ──────────────────────────────────────────
     } else if (isPres) {
       det.innerHTML =
         '<div style="display:flex;gap:12px;min-width:460px;">' +
