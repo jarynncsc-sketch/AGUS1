@@ -1042,7 +1042,7 @@
 <!-- DASHBOARD -->
 <div id="dashboard">
   <div class="card device-list">
-    <h3>Smart Devices</h3>
+    <h3>Smart Devices</h3> <div id="device-filter-bar">   <button onclick="toggleFilter('pressure')" id="filter-pressure" class="filter-pill active pres">📊 Pressure</button>   <button onclick="toggleFilter('reservoir')" id="filter-reservoir" class="filter-pill active res">💧 Reservoir</button>   <button onclick="toggleFilter('pumping')" id="filter-pumping" class="filter-pill active pump">⚙️ Pump Stn</button> </div>
     <div class="device-list-scroll"><ul id="device-list"></ul></div>
   </div>
   <div id="map-container" class="card">
@@ -1165,6 +1165,12 @@
       min-width: 90px !important;
     }
   }
+  .filter-pill{padding:4px 10px;border-radius:20px;border:1.5px solid rgba(0,64,128,0.25);background:white;color:#004080;font-size:11px;font-weight:700;cursor:pointer;transition:0.18s;white-space:nowrap;}
+.filter-pill.active{background:#004080;color:white;border-color:#004080;}
+.filter-pill.active.pres{background:#1d4ed8;border-color:#1d4ed8;}
+.filter-pill.active.res{background:#22c55e;border-color:#22c55e;}
+.filter-pill.active.pump{background:#f97316;border-color:#f97316;}
+#device-filter-bar{display:flex;gap:4px;padding:6px 8px 6px;border-bottom:1px solid rgba(0,64,128,0.10);flex-wrap:wrap;background:rgba(240,248,255,0.6);}
 </style>
 <!-- GRAPH MODAL -->
 <div id="graph-modal">
@@ -1321,6 +1327,13 @@
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.0/dist/ol.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
+  var activeFilters = new Set(['pressure','reservoir','pumping']);
+function toggleFilter(type){
+  if(activeFilters.has(type)) activeFilters.delete(type); else activeFilters.add(type);
+  var btn=document.getElementById('filter-'+type);
+  if(btn){ btn.classList.toggle('active', activeFilters.has(type)); }
+  updateDashboard();
+}
 var API_URL = 'https://script.google.com/macros/s/AKfycbynsfU43pQB7ZnNnWRl4VDqLivyrcc66srnxxI7Mv64_MgmEfbBrg-zadecRgve6IBQ5A/exec';
 
 function apiGet(action, params) {
@@ -1880,6 +1893,9 @@ function updateMap(devices) {
     var rawType = (d.type || '').toLowerCase().trim();
     var deviceName = (d.device || '').toLowerCase();
     var effectiveType = rawType;
+    if (effectiveType==='reservoir' && !activeFilters.has('reservoir')) return;
+if (effectiveType==='pressure'  && !activeFilters.has('pressure'))  return;
+if (effectiveType!=='reservoir' && effectiveType!=='pressure' && !activeFilters.has('pumping')) return;
     if (rawType !== 'pressure' && deviceName.includes('pressure')) effectiveType = 'pressure';
     else if (rawType !== 'reservoir' && deviceName.includes('reservoir')) effectiveType = 'reservoir';
     var isPres = effectiveType === 'pressure';
@@ -1913,7 +1929,7 @@ function updateDeviceList(devices) {
     var isRes = (d.type&&d.type.toLowerCase().trim()==='reservoir')||name.includes('reservoir');
     var isPres = (d.type&&d.type.toLowerCase().trim()==='pressure')||name.includes('pressure');
     var isPS = name.includes('pumping station');
-    if (!isPres&&!isPS&&!isRes) return;
+    if (!isPres&&!isPS&&!isRes) return; if (isRes && !activeFilters.has('reservoir')) return; if (isPres && !activeFilters.has('pressure')) return; if (isPS && !activeFilters.has('pumping')) return;
     var effSt = (isPres||isRes) ? derivePressureStatus(d) : d.status;
     var sc = effSt==='Online'?'status-Online':effSt==='Offline'?'status-Offline':'status-Fault';
     var fi = d.button?'<span class="blink" title="Fault">!</span>':'', fb = d.button?'Fault-blink':'';
