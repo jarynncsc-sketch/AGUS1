@@ -8,6 +8,21 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@7.5.0/ol.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    .device-list li {
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.device-list li.filter-hidden {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.filter-pill {
+  transition: all 0.2s ease;
+}
+.filter-pill:active {
+  transform: scale(0.96);
+}
     @media screen and (max-width: 900px) {
  
   /* ── Body & root ── */
@@ -1149,6 +1164,21 @@
 </div>
 
 <style>
+  .device-list li {
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.device-list li.filter-hidden {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.filter-pill {
+  transition: all 0.2s ease;
+}
+.filter-pill:active {
+  transform: scale(0.96);
+}
   @keyframes gentlePulse {
     0% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
     70% { opacity: 1; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
@@ -1327,6 +1357,198 @@
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.0/dist/ol.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
+  // ========== SMOOTH FILTERING IMPLEMENTATION ==========
+let cachedDevices = [];           // Cache for instant filtering
+let filterDebounceTimer = null;
+
+// Replace your existing toggleFilter function with this one
+window.toggleFilter = function(type) {
+  if(activeFilters.has(type)) activeFilters.delete(type);
+  else activeFilters.add(type);
+  const btn = document.getElementById('filter-'+type);
+  if(btn) btn.classList.toggle('active', activeFilters.has(type));
+  if(filterDebounceTimer) clearTimeout(filterDebounceTimer);
+  filterDebounceTimer = setTimeout(() => applyFiltersFromCache(), 10);
+};
+
+// New function: apply filters from cached data without network call
+function applyFiltersFromCache() {
+  if(!cachedDevices.length) return;
+  const filtered = cachedDevices.filter(dev => {
+    const name = (dev.device || '').toLowerCase();
+    const type = (dev.type || '').toLowerCase().trim();
+    const isRes = type === 'reservoir' || name.includes('reservoir');
+    const isPres = type === 'pressure' || name.includes('pressure');
+    const isPS = name.includes('pumping station');
+    if(isRes) return activeFilters.has('reservoir');
+    if(isPres) return activeFilters.has('pressure');
+    if(isPS) return activeFilters.has('pumping');
+    return false;
+  });
+  updateDeviceListSmooth(filtered);
+  updateMapSmooth(filtered);
+  if(selectedDevice && !filtered.some(d => d.device === selectedDevice)) selectedDevice = null;
+  else if(selectedDevice) showDeviceDetails(selectedDevice);
+}
+
+// Smooth device list update (reuse existing items + transitions)
+function updateDeviceListSmooth(devices) {
+  const container = document.getElementById('device-list');
+  const newNames = new Set(devices.map(d => d.device));
+  // Hide removed items with CSS transition
+  Array.from(container.children).forEach(li => {
+    const name = li.getAttribute('data-device-name');
+    if(name && !newNames.has(name)) li.classList.add('filter-hidden');
+    else li.classList.remove('filter-hidden');
+  });
+  setTimeout(() => {
+    Array.from(container.children).forEach(li => {
+      if(li.classList.contains('filter-hidden')) li.remove();
+    });
+  }, 200);
+  // Add new items or refresh existing
+  devices.forEach(dev => {
+    let li = Array.from(container.children).find(el => el.getAttribute('data-device-name') === dev.device);
+    if(li) refreshDeviceListItem(li, dev);
+    else {
+      li = createDeviceListItem(dev);
+      li.setAttribute('data-device-name', dev.device);
+      li.style.opacity = '0';
+      li.style.transform = 'scale(0.96)';
+      container.appendChild(li);
+      setTimeout(() => { li.style.opacity = '1'; li.style.transform = ''; }, 10);
+    }
+  });
+}
+
+// Helper: refresh content while preserving checkbox state
+function refreshDeviceListItem(li, dev) {
+  const cb = li.querySelector('input[type="checkbox"]');
+  const wasChecked = cb ? cb.checked : false;
+  li.innerHTML = generateDeviceListItemHTML(dev);
+  if(cb && wasChecked) {
+    const newCb = li.querySelector('input[type="checkbox"]');
+    if(newCb) newCb.checked = wasChecked;
+  }
+  attachDeviceListItemEvents(li, dev);
+}
+
+// Generate HTML for a device list item (same logic as original)
+function generateDeviceListItemHTML(dev) {
+  const name = dev.device;
+  const isRes = (dev.type && dev.type.toLowerCase().trim() === 'reservoir') || name.toLowerCase().includes('reservoir');
+  const isPres = (dev.type && dev.type.toLowerCase().trim() === 'pressure') || name.toLowerCase().includes('pressure');
+  const effSt = (isPres||isRes) ? derivePressureStatus(dev) : dev.status;
+  const sc = effSt==='Online'?'status-Online':effSt==='Offline'?'status-Offline':'status-Fault';
+  const fi = dev.button ? '<span class="blink" title="Fault">!</span>' : '';
+  const fb = dev.button ? 'Fault-blink' : '';
+  if(isRes) {
+    const r = reservoirThresholdsCache[name] || {minLevel:20,maxLevel:250};
+    let wv = (dev.level != null && dev.level !== '') ? Math.round(parseFloat(dev.level))+' m³' : '-- m³';
+    let wc='', bc='';
+    if(dev.level != null && dev.level !== '') {
+      const lv = parseFloat(dev.level);
+      if(lv < r.minLevel){ wc='low'; bc='blink-alarm'; }
+      else if(lv > r.maxLevel){ wc='high'; bc='blink-alarm'; }
+      else wc='normal';
+    }
+    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><span class="waterlevel-value ${wc} ${bc}">${wv}</span></div>`;
+  } else if(isPres) {
+    const s = pressureSettingsCache[name] || {minPsi:20,normalPsi:50,maxPsi:80};
+    let pv = dev.pressure ? Math.round(parseFloat(dev.pressure))+' psi' : '-- psi';
+    let pc='', bc='';
+    if(dev.pressure) {
+      const p = parseFloat(dev.pressure);
+      if(p < s.minPsi){ pc='low'; bc='blink-alarm'; }
+      else if(p > s.maxPsi){ pc='high'; bc='blink-alarm'; }
+      else pc='normal';
+    }
+    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><span class="pressure-value ${pc} ${bc}">${pv}</span></div>`;
+  } else {
+    const serverRelayOn = dev.relay == 1 || dev.relay === true || dev.relay === '1';
+    let confirmed = localStorage.getItem('confirmed_' + name);
+    const desired = localStorage.getItem('desired_' + name);
+    const displayState = desired || confirmed || (serverRelayOn ? 'ON' : 'OFF');
+    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><label class="toggle-switch"><input type="checkbox" ${displayState==='ON'?'checked':''}><span class="slider"></span></label></div>`;
+  }
+}
+
+function attachDeviceListItemEvents(li, dev) {
+  const cb = li.querySelector('input[type="checkbox"]');
+  if(cb) {
+    cb.addEventListener('change', (e) => {
+      e.stopPropagation();
+      const ns = cb.checked ? 'ON' : 'OFF';
+      localStorage.setItem('desired_' + dev.device, ns);
+      OfflineQueue.push({device: dev.device, state: ns});
+      localStorage.setItem('OfflineQueue', JSON.stringify(OfflineQueue));
+      updateDashboard();
+    });
+  }
+  li.addEventListener('click', (e) => {
+    if(e.target.tagName.toLowerCase() !== 'input') selectDevice(dev.device);
+  });
+}
+
+function createDeviceListItem(dev) {
+  const li = document.createElement('li');
+  li.setAttribute('data-device-name', dev.device);
+  li.innerHTML = generateDeviceListItemHTML(dev);
+  attachDeviceListItemEvents(li, dev);
+  return li;
+}
+
+// Smooth map update: toggle visibility instead of clearing
+function updateMapSmooth(devices) {
+  const newNames = new Set(devices.map(d => d.device));
+  deviceSource.getFeatures().forEach(f => {
+    const name = f.get('name');
+    f.set('visible', name && newNames.has(name));
+  });
+  devices.forEach(dev => {
+    if(!deviceMarkers[dev.device] && dev.latitude && dev.longitude) {
+      const coord = ol.proj.fromLonLat([parseFloat(dev.longitude), parseFloat(dev.latitude)]);
+      const rawType = (dev.type || '').toLowerCase().trim();
+      let effectiveType = rawType;
+      if(rawType !== 'pressure' && dev.device.toLowerCase().includes('pressure')) effectiveType = 'pressure';
+      else if(rawType !== 'reservoir' && dev.device.toLowerCase().includes('reservoir')) effectiveType = 'reservoir';
+      const stat = (effectiveType === 'pressure') ? derivePressureStatus(dev) : dev.status;
+      const f = new ol.Feature({geometry:new ol.geom.Point(coord), name:dev.device, status:stat, type:effectiveType, pressure:dev.pressure||null, flow:dev.flow||null, relay:dev.relay||null, button:dev.button||null, voltage:dev.voltage||null, current:dev.current||null, power:dev.power||null, energy:dev.energy||null, level:dev.level||null, firmware:dev.firmware||null, lastToggledBy:dev.lastToggledBy||null, visible:true});
+      deviceSource.addFeature(f);
+      deviceMarkers[dev.device] = f;
+    } else if(deviceMarkers[dev.device]) {
+      const f = deviceMarkers[dev.device];
+      f.set('status', (effectiveType === 'pressure') ? derivePressureStatus(dev) : dev.status);
+      f.set('pressure', dev.pressure);
+      f.set('level', dev.level);
+      f.set('flow', dev.flow);
+      f.set('relay', dev.relay);
+      f.set('button', dev.button);
+      f.set('voltage', dev.voltage);
+      f.set('current', dev.current);
+      f.set('power', dev.power);
+      f.set('energy', dev.energy);
+      f.set('lastToggledBy', dev.lastToggledBy);
+      f.set('visible', true);
+      f.changed();
+    }
+  });
+  clusterLayer.getSource().getFeatures().forEach(f => f.changed());
+}
+
+// Override the original updateDashboard to use cache + smooth filtering
+const originalUpdateDashboard = updateDashboard;
+window.updateDashboard = function() {
+  apiGet('getDashboardData').then(devices => {
+    cachedDevices = devices;
+    devices.forEach(d => {
+      if(d.minPsi||d.normalPsi||d.maxPsi) pressureSettingsCache[d.device]={minPsi:d.minPsi||20,normalPsi:d.normalPsi||50,maxPsi:d.maxPsi||80,updatedBy:d.settingsUpdatedBy||null,updatedAt:d.settingsUpdatedAt||null};
+      if(d.minLevel||d.maxLevel) reservoirThresholdsCache[d.device]={minLevel:d.minLevel||20,maxLevel:d.maxLevel||250,updatedBy:d.reservoirUpdatedBy||null,updatedAt:d.reservoirUpdatedAt||null};
+    });
+    applyFiltersFromCache();
+    if(selectedDevice) showDeviceDetails(selectedDevice);
+  }).catch(err => console.error('updateDashboard error:', err));
+};
   var activeFilters = new Set(['pressure','reservoir','pumping']);
 function toggleFilter(type){
   if(activeFilters.has(type)) activeFilters.delete(type); else activeFilters.add(type);
