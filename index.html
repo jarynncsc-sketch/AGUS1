@@ -3,26 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AGUS – Pump Station Dashboard</title>
+  <title>AGUS – AI‑Enhanced Pump Station Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@7.5.0/ol.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .device-list li {
-  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-.device-list li.filter-hidden {
-  opacity: 0;
-  transform: scale(0.96);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.filter-pill {
-  transition: all 0.2s ease;
-}
-.filter-pill:active {
-  transform: scale(0.96);
-}
     @media screen and (max-width: 900px) {
  
   /* ── Body & root ── */
@@ -968,6 +953,19 @@
     .ps-gear-btn:hover{background:linear-gradient(135deg,#ddeeff,#c9e0ff);}
     .rs-gear-btn{margin-top:7px;width:100%;padding:5px 0;background:linear-gradient(135deg,#e0f2fe,#b8e1f5);color:#0369a1;border:1.5px solid #7ac7e0;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;transition:0.2s;}
     .rs-gear-btn:hover{background:linear-gradient(135deg,#c8e9fe,#a0d6f0);}
+  
+    /* ========== AI MODULES ADDITIONAL STYLES ========== */
+    .ai-anomaly-badge { font-size:10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:6px; padding:2px 6px; margin-top:3px; display:flex; align-items:center; gap:4px; cursor:pointer; transition:0.2s; }
+    .ai-anomaly-badge:hover { background:rgba(239,68,68,0.2); }
+    .ai-msg { padding: 9px 13px; border-radius: 10px; font-size: 13px; line-height: 1.55; max-width: 88%; }
+    .ai-msg-user { background: #004080; color: white; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
+    .ai-msg-bot  { background: #f0f6ff; color: #002b5c; align-self: flex-start; border-radius: 10px 10px 10px 2px; border: 1px solid #d0e4f7; }
+    .ai-msg-typing { opacity: 0.6; font-style: italic; }
+    #ai-chat-panel { font-family: 'DM Sans', sans-serif; }
+    #energy-advisor-overlay .spinner { width: 32px; height: 32px; border: 3px solid #cfe4ff; border-top-color: #004080; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 700px) { .ai-msg { max-width: 95%; } #ai-chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 16px; } }
+
   </style>
 </head>
 <body>
@@ -1057,7 +1055,7 @@
 <!-- DASHBOARD -->
 <div id="dashboard">
   <div class="card device-list">
-    <h3>Smart Devices</h3> <div id="device-filter-bar">   <button onclick="toggleFilter('pressure')" id="filter-pressure" class="filter-pill active pres">📊 Pressure</button>   <button onclick="toggleFilter('reservoir')" id="filter-reservoir" class="filter-pill active res">💧 Reservoir</button>   <button onclick="toggleFilter('pumping')" id="filter-pumping" class="filter-pill active pump">⚙️ Pump Stn</button> </div>
+    <h3>Smart Devices</h3> <div id="device-filter-bar">   <button onclick="toggleFilter('pressure')" id="filter-pressure" class="filter-pill active pres">📊 Pressure</button>   <button onclick="toggleFilter('reservoir')" id="filter-reservoir" class="filter-pill active res">💧 Reservoir</button>   <button onclick="toggleFilter('pumping')" id="filter-pumping" class="filter-pill active pump">⚙️ Pumping Station</button> </div>
     <div class="device-list-scroll"><ul id="device-list"></ul></div>
   </div>
   <div id="map-container" class="card">
@@ -1164,37 +1162,6 @@
 </div>
 
 <style>
-  /* Smooth filter transitions */
-.device-list li {
-  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-.device-list li.filter-hidden {
-  opacity: 0;
-  transform: scale(0.96);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.filter-pill {
-  transition: all 0.2s ease;
-}
-.filter-pill:active {
-  transform: scale(0.96);
-}
-  .device-list li {
-  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-.device-list li.filter-hidden {
-  opacity: 0;
-  transform: scale(0.96);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.filter-pill {
-  transition: all 0.2s ease;
-}
-.filter-pill:active {
-  transform: scale(0.96);
-}
   @keyframes gentlePulse {
     0% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
     70% { opacity: 1; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
@@ -1373,198 +1340,6 @@
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.0/dist/ol.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
-  // ========== SMOOTH FILTERING IMPLEMENTATION ==========
-let cachedDevices = [];           // Cache for instant filtering
-let filterDebounceTimer = null;
-
-// Replace your existing toggleFilter function with this one
-window.toggleFilter = function(type) {
-  if(activeFilters.has(type)) activeFilters.delete(type);
-  else activeFilters.add(type);
-  const btn = document.getElementById('filter-'+type);
-  if(btn) btn.classList.toggle('active', activeFilters.has(type));
-  if(filterDebounceTimer) clearTimeout(filterDebounceTimer);
-  filterDebounceTimer = setTimeout(() => applyFiltersFromCache(), 10);
-};
-
-// New function: apply filters from cached data without network call
-function applyFiltersFromCache() {
-  if(!cachedDevices.length) return;
-  const filtered = cachedDevices.filter(dev => {
-    const name = (dev.device || '').toLowerCase();
-    const type = (dev.type || '').toLowerCase().trim();
-    const isRes = type === 'reservoir' || name.includes('reservoir');
-    const isPres = type === 'pressure' || name.includes('pressure');
-    const isPS = name.includes('pumping station');
-    if(isRes) return activeFilters.has('reservoir');
-    if(isPres) return activeFilters.has('pressure');
-    if(isPS) return activeFilters.has('pumping');
-    return false;
-  });
-  updateDeviceListSmooth(filtered);
-  updateMapSmooth(filtered);
-  if(selectedDevice && !filtered.some(d => d.device === selectedDevice)) selectedDevice = null;
-  else if(selectedDevice) showDeviceDetails(selectedDevice);
-}
-
-// Smooth device list update (reuse existing items + transitions)
-function updateDeviceListSmooth(devices) {
-  const container = document.getElementById('device-list');
-  const newNames = new Set(devices.map(d => d.device));
-  // Hide removed items with CSS transition
-  Array.from(container.children).forEach(li => {
-    const name = li.getAttribute('data-device-name');
-    if(name && !newNames.has(name)) li.classList.add('filter-hidden');
-    else li.classList.remove('filter-hidden');
-  });
-  setTimeout(() => {
-    Array.from(container.children).forEach(li => {
-      if(li.classList.contains('filter-hidden')) li.remove();
-    });
-  }, 200);
-  // Add new items or refresh existing
-  devices.forEach(dev => {
-    let li = Array.from(container.children).find(el => el.getAttribute('data-device-name') === dev.device);
-    if(li) refreshDeviceListItem(li, dev);
-    else {
-      li = createDeviceListItem(dev);
-      li.setAttribute('data-device-name', dev.device);
-      li.style.opacity = '0';
-      li.style.transform = 'scale(0.96)';
-      container.appendChild(li);
-      setTimeout(() => { li.style.opacity = '1'; li.style.transform = ''; }, 10);
-    }
-  });
-}
-
-// Helper: refresh content while preserving checkbox state
-function refreshDeviceListItem(li, dev) {
-  const cb = li.querySelector('input[type="checkbox"]');
-  const wasChecked = cb ? cb.checked : false;
-  li.innerHTML = generateDeviceListItemHTML(dev);
-  if(cb && wasChecked) {
-    const newCb = li.querySelector('input[type="checkbox"]');
-    if(newCb) newCb.checked = wasChecked;
-  }
-  attachDeviceListItemEvents(li, dev);
-}
-
-// Generate HTML for a device list item (same logic as original)
-function generateDeviceListItemHTML(dev) {
-  const name = dev.device;
-  const isRes = (dev.type && dev.type.toLowerCase().trim() === 'reservoir') || name.toLowerCase().includes('reservoir');
-  const isPres = (dev.type && dev.type.toLowerCase().trim() === 'pressure') || name.toLowerCase().includes('pressure');
-  const effSt = (isPres||isRes) ? derivePressureStatus(dev) : dev.status;
-  const sc = effSt==='Online'?'status-Online':effSt==='Offline'?'status-Offline':'status-Fault';
-  const fi = dev.button ? '<span class="blink" title="Fault">!</span>' : '';
-  const fb = dev.button ? 'Fault-blink' : '';
-  if(isRes) {
-    const r = reservoirThresholdsCache[name] || {minLevel:20,maxLevel:250};
-    let wv = (dev.level != null && dev.level !== '') ? Math.round(parseFloat(dev.level))+' m³' : '-- m³';
-    let wc='', bc='';
-    if(dev.level != null && dev.level !== '') {
-      const lv = parseFloat(dev.level);
-      if(lv < r.minLevel){ wc='low'; bc='blink-alarm'; }
-      else if(lv > r.maxLevel){ wc='high'; bc='blink-alarm'; }
-      else wc='normal';
-    }
-    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><span class="waterlevel-value ${wc} ${bc}">${wv}</span></div>`;
-  } else if(isPres) {
-    const s = pressureSettingsCache[name] || {minPsi:20,normalPsi:50,maxPsi:80};
-    let pv = dev.pressure ? Math.round(parseFloat(dev.pressure))+' psi' : '-- psi';
-    let pc='', bc='';
-    if(dev.pressure) {
-      const p = parseFloat(dev.pressure);
-      if(p < s.minPsi){ pc='low'; bc='blink-alarm'; }
-      else if(p > s.maxPsi){ pc='high'; bc='blink-alarm'; }
-      else pc='normal';
-    }
-    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><span class="pressure-value ${pc} ${bc}">${pv}</span></div>`;
-  } else {
-    const serverRelayOn = dev.relay == 1 || dev.relay === true || dev.relay === '1';
-    let confirmed = localStorage.getItem('confirmed_' + name);
-    const desired = localStorage.getItem('desired_' + name);
-    const displayState = desired || confirmed || (serverRelayOn ? 'ON' : 'OFF');
-    return `<span>${name}</span><div class="device-status">${fi}<span class="status-indicator ${sc} ${fb}"></span><label class="toggle-switch"><input type="checkbox" ${displayState==='ON'?'checked':''}><span class="slider"></span></label></div>`;
-  }
-}
-
-function attachDeviceListItemEvents(li, dev) {
-  const cb = li.querySelector('input[type="checkbox"]');
-  if(cb) {
-    cb.addEventListener('change', (e) => {
-      e.stopPropagation();
-      const ns = cb.checked ? 'ON' : 'OFF';
-      localStorage.setItem('desired_' + dev.device, ns);
-      OfflineQueue.push({device: dev.device, state: ns});
-      localStorage.setItem('OfflineQueue', JSON.stringify(OfflineQueue));
-      updateDashboard();
-    });
-  }
-  li.addEventListener('click', (e) => {
-    if(e.target.tagName.toLowerCase() !== 'input') selectDevice(dev.device);
-  });
-}
-
-function createDeviceListItem(dev) {
-  const li = document.createElement('li');
-  li.setAttribute('data-device-name', dev.device);
-  li.innerHTML = generateDeviceListItemHTML(dev);
-  attachDeviceListItemEvents(li, dev);
-  return li;
-}
-
-// Smooth map update: toggle visibility instead of clearing
-function updateMapSmooth(devices) {
-  const newNames = new Set(devices.map(d => d.device));
-  deviceSource.getFeatures().forEach(f => {
-    const name = f.get('name');
-    f.set('visible', name && newNames.has(name));
-  });
-  devices.forEach(dev => {
-    if(!deviceMarkers[dev.device] && dev.latitude && dev.longitude) {
-      const coord = ol.proj.fromLonLat([parseFloat(dev.longitude), parseFloat(dev.latitude)]);
-      const rawType = (dev.type || '').toLowerCase().trim();
-      let effectiveType = rawType;
-      if(rawType !== 'pressure' && dev.device.toLowerCase().includes('pressure')) effectiveType = 'pressure';
-      else if(rawType !== 'reservoir' && dev.device.toLowerCase().includes('reservoir')) effectiveType = 'reservoir';
-      const stat = (effectiveType === 'pressure') ? derivePressureStatus(dev) : dev.status;
-      const f = new ol.Feature({geometry:new ol.geom.Point(coord), name:dev.device, status:stat, type:effectiveType, pressure:dev.pressure||null, flow:dev.flow||null, relay:dev.relay||null, button:dev.button||null, voltage:dev.voltage||null, current:dev.current||null, power:dev.power||null, energy:dev.energy||null, level:dev.level||null, firmware:dev.firmware||null, lastToggledBy:dev.lastToggledBy||null, visible:true});
-      deviceSource.addFeature(f);
-      deviceMarkers[dev.device] = f;
-    } else if(deviceMarkers[dev.device]) {
-      const f = deviceMarkers[dev.device];
-      f.set('status', (effectiveType === 'pressure') ? derivePressureStatus(dev) : dev.status);
-      f.set('pressure', dev.pressure);
-      f.set('level', dev.level);
-      f.set('flow', dev.flow);
-      f.set('relay', dev.relay);
-      f.set('button', dev.button);
-      f.set('voltage', dev.voltage);
-      f.set('current', dev.current);
-      f.set('power', dev.power);
-      f.set('energy', dev.energy);
-      f.set('lastToggledBy', dev.lastToggledBy);
-      f.set('visible', true);
-      f.changed();
-    }
-  });
-  clusterLayer.getSource().getFeatures().forEach(f => f.changed());
-}
-
-// Override the original updateDashboard to use cache + smooth filtering
-const originalUpdateDashboard = updateDashboard;
-window.updateDashboard = function() {
-  apiGet('getDashboardData').then(devices => {
-    cachedDevices = devices;
-    devices.forEach(d => {
-      if(d.minPsi||d.normalPsi||d.maxPsi) pressureSettingsCache[d.device]={minPsi:d.minPsi||20,normalPsi:d.normalPsi||50,maxPsi:d.maxPsi||80,updatedBy:d.settingsUpdatedBy||null,updatedAt:d.settingsUpdatedAt||null};
-      if(d.minLevel||d.maxLevel) reservoirThresholdsCache[d.device]={minLevel:d.minLevel||20,maxLevel:d.maxLevel||250,updatedBy:d.reservoirUpdatedBy||null,updatedAt:d.reservoirUpdatedAt||null};
-    });
-    applyFiltersFromCache();
-    if(selectedDevice) showDeviceDetails(selectedDevice);
-  }).catch(err => console.error('updateDashboard error:', err));
-};
   var activeFilters = new Set(['pressure','reservoir','pumping']);
 function toggleFilter(type){
   if(activeFilters.has(type)) activeFilters.delete(type); else activeFilters.add(type);
@@ -1779,7 +1554,7 @@ var clusterLayer = new ol.layer.Vector({ source:clusterSource, style:function(fe
     var f = features[0], status = f.get('status'), type = (f.get('type')||'').toLowerCase().trim(), name = f.get('name')||'';
     var isRes = type==='reservoir' || name.toLowerCase().includes('reservoir');
     var isPS = name.toLowerCase().includes('pumping station');
-//Reservior pin
+   //reservior 
     if (isRes) {
   var level = f.get('level');
   var lv    = parseFloat(level);
@@ -2769,5 +2544,428 @@ document.getElementById('reservoir-settings-modal').addEventListener('click',fun
   rh.addEventListener('mousedown',function(e){initR(e,'right');});
 })();
 </script>
+
+<!-- ========== AI CHAT ASSISTANT PANEL ========== -->
+<div id="ai-chat-panel" style="display:none;position:fixed;bottom:24px;right:24px;width:380px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.25);z-index:9000;flex-direction:column;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,#004080,#0066cc);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+    <div><div style="color:white;font-weight:800;font-size:14px;">&#9889; AGUS AI Assistant</div><div style="color:rgba(255,255,255,0.7);font-size:11px;" id="ai-chat-status">Ready &mdash; ask about your system</div></div>
+    <button onclick="toggleAIChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;">&#10005;</button>
+  </div>
+  <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:320px;">
+    <div class="ai-msg ai-msg-bot">Hello! I have access to live sensor data. Ask me about pressure trends, alarms, pump status, or energy efficiency.</div>
+  </div>
+  <div style="padding:10px 12px;border-top:1px solid #e5eef9;display:flex;gap:8px;">
+    <input id="ai-chat-input" type="text" placeholder="e.g. Which device has the highest pressure?" style="flex:1;padding:9px 12px;border:1.5px solid #d0e4f7;border-radius:8px;font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()" style="padding:9px 14px;background:#004080;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Send</button>
+  </div>
+</div>
+<button id="ai-chat-fab" onclick="toggleAIChat()" title="Open AI Assistant" style="display:none;position:fixed;bottom:24px;right:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#004080,#0066cc);border:none;color:white;font-size:22px;cursor:pointer;box-shadow:0 6px 20px rgba(0,64,128,0.40);z-index:8999;">&#129302;</button>
+
+<!-- ========== AI MODULES JAVASCRIPT ========== -->
+<script>
+// ============================================================
+// Module 1: Anomaly Detection (z-score based)
+// ============================================================
+var anomalyState = {};
+var ANOMALY_WINDOW = 20;
+var ANOMALY_Z_THRESHOLD = 2.5;
+function detectAnomaly(deviceName, value) {
+  if (isNaN(value)) return { anomaly: false, zscore: 0, direction: null };
+  if (!anomalyState[deviceName]) anomalyState[deviceName] = { values: [] };
+  var win = anomalyState[deviceName].values;
+  win.push(value);
+  if (win.length > ANOMALY_WINDOW) win.shift();
+  if (win.length < 5) return { anomaly: false, zscore: 0, direction: null };
+  var mean = win.reduce(function(a,b){return a+b;},0) / win.length;
+  var variance = win.reduce(function(s,v){return s+(v-mean)*(v-mean);},0) / win.length;
+  var std = Math.sqrt(variance);
+  if (std < 0.001) return { anomaly: false, zscore: 0, direction: null };
+  var z = Math.abs(value - mean) / std;
+  var dir = value > mean ? 'high' : 'low';
+  return { anomaly: z > ANOMALY_Z_THRESHOLD, zscore: z.toFixed(2), direction: dir };
+}
+function injectAnomalyBadge(li, deviceName, reading, isReservoir) {
+  var result = detectAnomaly(deviceName + (isReservoir ? ':level' : ':pressure'), parseFloat(reading));
+  var old = li.querySelector('.ai-anomaly-badge');
+  if (old) old.remove();
+  if (!result.anomaly) return;
+  var badge = document.createElement('div');
+  badge.className = 'ai-anomaly-badge';
+  badge.title = 'AI anomaly (z=' + result.zscore + ')';
+  badge.innerHTML = '<span style="font-size:12px;">&#9889;</span> AI anomaly &middot; z=' + result.zscore + ' (' + result.direction + ')';
+  badge.addEventListener('click', function() { showNotification('Anomaly on ' + deviceName + ': deviation ' + result.zscore + 'σ from recent average.', 'info'); });
+  li.appendChild(badge);
+}
+
+// ============================================================
+// Module 2: Predictive Maintenance (wear score)
+// ============================================================
+var maintenanceData = {};
+function trackMaintenanceEvent(deviceName, d) {
+  if (!maintenanceData[deviceName]) maintenanceData[deviceName] = { faultCount: 0, onSeconds: 0, voltSags: 0, lastScore: 0, lastStatus: null };
+  var m = maintenanceData[deviceName];
+  if ((d.status === 'Fault' || d.button) && m.lastStatus !== 'Fault') m.faultCount++;
+  m.lastStatus = d.status;
+  if (d.relay == 1 || d.relay === '1' || d.relay === true) m.onSeconds += 15;
+  var v = parseFloat(d.voltage);
+  if (!isNaN(v) && v > 0 && v < 200) m.voltSags++;
+  var hoursOn = m.onSeconds / 3600;
+  var hourScore = Math.min(40, hoursOn / 50);
+  var faultScore = Math.min(35, m.faultCount * 7);
+  var sagScore = Math.min(25, m.voltSags * 5);
+  m.lastScore = Math.round(hourScore + faultScore + sagScore);
+}
+function getMaintenanceLabel(score) {
+  if (score < 20) return { label: 'Good', color: '#22c55e' };
+  if (score < 50) return { label: 'Monitor', color: '#f97316' };
+  if (score < 75) return { label: 'Service', color: '#ef4444' };
+  return { label: 'Critical', color: '#dc2626' };
+}
+function buildMaintenanceBadge(deviceName) {
+  var m = maintenanceData[deviceName];
+  if (!m) return '';
+  var info = getMaintenanceLabel(m.lastScore);
+  var bar = '<div style="height:6px;background:#e2e8f0;border-radius:3px;margin:4px 0 8px;"><div style="height:6px;width:' + m.lastScore + '%;background:' + info.color + ';border-radius:3px;"></div></div>';
+  return '<div style="margin-top:8px;padding:8px 10px;border-radius:8px;border:1.5px solid ' + info.color + '33;background:' + info.color + '11;">'
+       + '<div style="font-size:11px;font-weight:800;color:' + info.color + ';margin-bottom:4px;">&#128295; AI MAINTENANCE SCORE: ' + m.lastScore + '/100</div>' + bar
+       + '<div style="font-size:11px;color:#475569;">Status: <b style="color:' + info.color + '">' + info.label + '</b> &nbsp;|&nbsp; On-time: ' + Math.round(m.onSeconds/3600) + 'h &nbsp;|&nbsp; Faults: ' + m.faultCount + ' &nbsp;|&nbsp; V-sags: ' + m.voltSags + '</div></div>';
+}
+function updateMaintenanceScore(devices) {
+  devices.forEach(function(d) { if (d.device && (d.device.toLowerCase().includes('pumping station'))) trackMaintenanceEvent(d.device, d); });
+}
+
+// ============================================================
+// Module 3: Demand Forecasting (WMA + seasonality)
+// ============================================================
+function computeForecast(rows, key) {
+  if (!rows || rows.length < 30) return [];
+  var vals = rows.map(function(r) { var v = parseFloat(r[key]); return isNaN(v) ? null : v; });
+  var WMA_WINDOW = 12;
+  var weights = Array.from({length: WMA_WINDOW}, function(_, i) { return i + 1; });
+  var weightSum = weights.reduce(function(a,b){return a+b;},0);
+  function wma(arr, idx) {
+    if (idx < WMA_WINDOW) return null;
+    var sum = 0;
+    for (var w = 0; w < WMA_WINDOW; w++) { var v = arr[idx - WMA_WINDOW + w]; if (v === null) return null; sum += v * weights[w]; }
+    return sum / weightSum;
+  }
+  var hourlyAvg = {};
+  rows.forEach(function(r) {
+    var t = parseSheetDate(r[window._timeKey]);
+    var v = parseFloat(r[key]);
+    if (!t || isNaN(v)) return;
+    var h = t.getDay() * 24 + t.getHours();
+    if (!hourlyAvg[h]) hourlyAvg[h] = { sum: 0, count: 0 };
+    hourlyAvg[h].sum += v; hourlyAvg[h].count++;
+  });
+  var globalMean = vals.filter(function(v){return v!==null;}).reduce(function(a,b){return a+b;},0) / vals.filter(function(v){return v!==null;}).length;
+  function seasonalFactor(row) {
+    var t = parseSheetDate(row[window._timeKey]);
+    if (!t) return 1;
+    var h = t.getDay() * 24 + t.getHours();
+    var avg = hourlyAvg[h];
+    if (!avg || avg.count < 2 || globalMean < 0.001) return 1;
+    return (avg.sum / avg.count) / globalMean;
+  }
+  var FORECAST_STEPS = 48;
+  var result = new Array(rows.length).fill(null);
+  for (var i = 0; i < FORECAST_STEPS; i++) {
+    var baseIdx = rows.length - 1 - i;
+    var base = wma(vals, baseIdx);
+    if (base === null) continue;
+    var sf = seasonalFactor(rows[rows.length - 1 - i]);
+    result[rows.length - FORECAST_STEPS + i] = parseFloat((base * sf).toFixed(3));
+  }
+  return result;
+}
+function injectForecastDataset() {
+  if (!myChart || !allGraphData.length) return;
+  var data = getFilteredData ? getFilteredData() : [];
+  if (data.length < 30) return;
+  var key = currentDeviceType === 'reservoir' ? (window._levelKey || window._pressKey) : window._pressKey;
+  if (!key) return;
+  var forecast = computeForecast(data, key);
+  if (!forecast || !forecast.some(function(v){return v!==null;})) return;
+  myChart.data.datasets.push({
+    label: 'AI Forecast',
+    data: forecast,
+    borderColor: 'rgba(245,158,11,0.85)',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    pointHoverRadius: 5,
+    tension: 0.4,
+    spanGaps: false,
+    yAxisID: 'yLeft'
+  });
+  myChart.update('none');
+}
+
+// ============================================================
+// Module 4: AI Chat Assistant (Anthropic Claude API)
+// ============================================================
+var aiChatVisible = false;
+var aiChatHistory = [];
+var AI_MODEL = 'claude-sonnet-4-20250514';
+function toggleAIChat() {
+  aiChatVisible = !aiChatVisible;
+  var panel = document.getElementById('ai-chat-panel');
+  var fab = document.getElementById('ai-chat-fab');
+  if (panel) panel.style.display = aiChatVisible ? 'flex' : 'none';
+  if (fab) fab.style.display = aiChatVisible ? 'none' : 'flex';
+}
+function buildAISystemContext(devices) {
+  var lines = ['You are the AI assistant for AGUS — Autonomous Groundwater Utility System. You have real-time sensor data. Answer concisely (max 3 sentences).'];
+  (devices || []).forEach(function(d) {
+    var type = (d.type || '').toLowerCase();
+    if (type === 'pressure' || (d.device||'').toLowerCase().includes('pressure')) {
+      lines.push('• ' + d.device + ' [Pressure] — ' + (d.pressure||'N/A') + ' psi | Status: ' + (d.status||'Unknown'));
+    } else if (type === 'reservoir' || (d.device||'').toLowerCase().includes('reservoir')) {
+      lines.push('• ' + d.device + ' [Reservoir] — ' + (d.level||'N/A') + ' m³ | Status: ' + (d.status||'Unknown'));
+    } else {
+      lines.push('• ' + d.device + ' [Pump Station] — pressure: ' + (d.pressure||'N/A') + ' psi | flow: ' + (d.flow||'N/A') + ' L/s | relay: ' + (d.relay?'ON':'OFF') + ' | status: ' + (d.status||'Unknown'));
+    }
+  });
+  return lines.join('
+');
+}
+function addAIChatMessage(text, role) {
+  var box = document.getElementById('ai-chat-messages');
+  if (!box) return null;
+  var div = document.createElement('div');
+  div.className = 'ai-msg ' + (role === 'user' ? 'ai-msg-user' : 'ai-msg-bot');
+  div.innerText = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+function sendAIMessage() {
+  var input = document.getElementById('ai-chat-input');
+  var question = (input ? input.value.trim() : '');
+  if (!question) return;
+  if (input) input.value = '';
+  addAIChatMessage(question, 'user');
+  aiChatHistory.push({ role: 'user', content: question });
+  var typingEl = addAIChatMessage('Thinking…', 'bot');
+  if (typingEl) typingEl.classList.add('ai-msg-typing');
+  document.getElementById('ai-chat-status').innerText = 'AI is thinking…';
+  apiGet('getDashboardData').then(function(devices) {
+    var sysPrompt = buildAISystemContext(devices);
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: 1000, system: sysPrompt, messages: aiChatHistory })
+    });
+  }).then(function(r) { if (!r.ok) throw new Error('API ' + r.status); return r.json(); }).then(function(data) {
+    var reply = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : 'Sorry, I could not generate a response.';
+    aiChatHistory.push({ role: 'assistant', content: reply });
+    if (typingEl) { typingEl.innerText = reply; typingEl.classList.remove('ai-msg-typing'); }
+    document.getElementById('ai-chat-status').innerText = 'Ready';
+  }).catch(function(err) {
+    if (typingEl) { typingEl.innerText = '⚠ Error: ' + (err.message || err); typingEl.classList.remove('ai-msg-typing'); }
+    document.getElementById('ai-chat-status').innerText = 'Error — try again';
+  });
+}
+
+// ============================================================
+// Module 5: Smart Alarm Correlator (groups alarms, uses Claude)
+// ============================================================
+var pendingAlarms = [];
+var CORRELATE_WINDOW_MS = 60000;
+var correlateTimer = null;
+var lastCorrelatedDigest = '';
+var originalSpeakAlarm, originalSpeakPSAlarm;
+function correlateAndAnnounce(deviceName, alarmType, reading) {
+  pendingAlarms.push({ device: deviceName, type: alarmType, reading: reading || '', ts: Date.now() });
+  if (correlateTimer) clearTimeout(correlateTimer);
+  correlateTimer = setTimeout(flushAlarmBuffer, 3000);
+}
+function flushAlarmBuffer() {
+  var now = Date.now();
+  pendingAlarms = pendingAlarms.filter(function(a) { return now - a.ts < CORRELATE_WINDOW_MS; });
+  if (!pendingAlarms.length) return;
+  var snapshot = pendingAlarms.slice();
+  pendingAlarms = [];
+  if (snapshot.length === 1) {
+    var a = snapshot[0];
+    var isRes = a.device.toLowerCase().includes('reservoir');
+    if (isRes) originalSpeakAlarm(a.device, a.type, true);
+    else originalSpeakPSAlarm(a.device, a.type);
+    return;
+  }
+  var bulletList = snapshot.map(function(a) { return '• ' + a.device + ': ' + a.type + (a.reading ? ' (' + a.reading + ')' : ''); }).join('
+');
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200, messages: [{ role: 'user', content: 'You are an alarm correlator for a water utility SCADA system.
+These alarms fired simultaneously:
+' + bulletList + '
+
+In ONE short sentence (max 20 words), identify the most likely single root cause. Be direct.' }] })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    var cause = (data.content && data.content[0]) ? data.content[0].text.trim() : 'Multiple simultaneous alarms — check system.';
+    var digest = 'AI correlated ' + snapshot.length + ' alarms. ' + cause;
+    if (digest !== lastCorrelatedDigest) {
+      lastCorrelatedDigest = digest;
+      var u = new SpeechSynthesisUtterance(digest); u.lang = 'en-US'; u.rate = 0.85; u.volume = 1;
+      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    }
+    showNotification('⚡ AI Alarm Digest: ' + cause, 'error');
+  }).catch(function() { snapshot.forEach(function(a) { originalSpeakPSAlarm(a.device, a.type); }); });
+}
+
+// ============================================================
+// Module 6: Energy Optimization Advisor
+// ============================================================
+function aggregateEnergyStats(deviceName, rows) {
+  if (!rows || !rows.length) return null;
+  var keys = Object.keys(rows[0]);
+  var flowK = keys.find(function(k){return /flowrate|flow/i.test(k);});
+  var powerK = keys.find(function(k){return /^power/i.test(k);});
+  var energyK = keys.find(function(k){return /energy/i.test(k);});
+  var timeK = keys.find(function(k){return /time|date|timestamp/i.test(k);}) || keys[0];
+  var totalEnergy = 0, peakPower = 0, lowFlowEvents = 0, highPowerEvents = 0;
+  var hourBuckets = new Array(24).fill(0).map(function() { return { energy: 0, count: 0 }; });
+  rows.forEach(function(r) {
+    var pw = parseFloat(r[powerK]); var en = parseFloat(r[energyK]); var fl = parseFloat(r[flowK]);
+    var ts = parseSheetDate(r[timeK]);
+    if (!isNaN(en)) totalEnergy += en;
+    if (!isNaN(pw) && pw > peakPower) peakPower = pw;
+    if (!isNaN(fl) && fl < 2 && fl > 0) lowFlowEvents++;
+    if (!isNaN(pw) && pw > 3000) highPowerEvents++;
+    if (ts && !isNaN(pw)) { var h = ts.getHours(); hourBuckets[h].energy += pw; hourBuckets[h].count++; }
+  });
+  var hourlyAvg = hourBuckets.map(function(b, h) { return { h: h, avg: b.count ? b.energy / b.count : 0 }; });
+  hourlyAvg.sort(function(a,b) { return b.avg - a.avg; });
+  var peakHours = hourlyAvg.slice(0,3).map(function(x){return x.h + ':00';}).join(', ');
+  var offPeakHours = hourlyAvg.slice(-3).map(function(x){return x.h + ':00';}).join(', ');
+  return { device: deviceName, totalEnergyKwh: totalEnergy.toFixed(1), peakPowerW: peakPower.toFixed(0), lowFlowEvents: lowFlowEvents, highPowerEvents: highPowerEvents, peakHours: peakHours, offPeakHours: offPeakHours, sampleCount: rows.length };
+}
+function openEnergyAdvisor() {
+  apiGet('getDashboardData').then(function(devices) {
+    var pumpDevices = devices.filter(function(d) { return (d.device||'').toLowerCase().includes('pumping station'); });
+    if (!pumpDevices.length) { showNotification('No pumping station devices found.', 'info'); return; }
+    var overlay = document.createElement('div');
+    overlay.id = 'energy-advisor-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,10,30,0.75);z-index:5200;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:28px 30px;box-shadow:0 24px 60px rgba(0,0,0,0.4);"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div><h3 style="margin:0;color:#002b5c;">&#9889; AI Energy Advisor</h3><div style="font-size:12px;color:#7a8fa6;">Analysing pump data &mdash; recommendations below</div></div><button onclick="document.getElementById('energy-advisor-overlay').remove()" style="background:#f0f4f9;border:none;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;">&#10005;</button></div><div id="energy-advisor-body"><div style="text-align:center;padding:40px;color:#7a8fa6;"><div class="spinner" style="margin:0 auto 12px;"></div>Loading pump data…</div></div></div>';
+    document.body.appendChild(overlay);
+    var fetches = pumpDevices.map(function(d) { return apiGet('getSheetData', { sheet: d.device }).then(function(rows) { return aggregateEnergyStats(d.device, rows); }).catch(function() { return null; }); });
+    Promise.all(fetches).then(function(statsArray) {
+      statsArray = statsArray.filter(Boolean);
+      if (!statsArray.length) { document.getElementById('energy-advisor-body').innerHTML = '<p style="color:#7a8fa6;">No data available yet for any pumping station.</p>'; return; }
+      var statsText = statsArray.map(function(s) { return '# ' + s.device + '
+- Total energy: ' + s.totalEnergyKwh + ' kWh
+- Peak power: ' + s.peakPowerW + ' W
+- Low-flow events: ' + s.lowFlowEvents + '
+- High-power events: ' + s.highPowerEvents + '
+- Peak hours: ' + s.peakHours + '
+- Off-peak: ' + s.offPeakHours; }).join('
+
+');
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: 'You are an energy efficiency advisor for a water utility (AGUS).
+Analyse this pump energy data and give 3–5 concrete, numbered recommendations.
+Focus on optimal run-time scheduling, load balancing, efficiency improvements.
+Use plain English. Each recommendation 1–2 sentences.
+
+' + statsText }] })
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        var advice = (data.content && data.content[0]) ? data.content[0].text.trim() : 'Unable to generate recommendations.';
+        var statsHtml = statsArray.map(function(s) { return '<div style="background:#f8faff;border:1px solid #d0e4f7;border-radius:8px;padding:10px 14px;margin-bottom:10px;"><div style="font-weight:700;color:#002b5c;">&#9881;&#65039; ' + s.device + '</div><div style="font-size:12px;color:#475569;display:grid;grid-template-columns:1fr 1fr;gap:3px;"><span>Energy: <b>' + s.totalEnergyKwh + ' kWh</b></span><span>Peak power: <b>' + s.peakPowerW + ' W</b></span><span>Low-flow events: <b>' + s.lowFlowEvents + '</b></span><span>Peak hours: <b>' + s.peakHours + '</b></span></div></div>'; }).join('');
+        var adviceHtml = advice.split('
+').map(function(line){ return line.trim() ? '<p style="margin:6px 0;color:#1e293b;font-size:13px;">' + line + '</p>' : ''; }).join('');
+        document.getElementById('energy-advisor-body').innerHTML = statsHtml + '<div style="margin-top:18px;padding:16px;background:linear-gradient(135deg,#f0f8ff,#e8f4fd);border-radius:10px;"><div style="font-size:12px;font-weight:800;color:#0044aa;margin-bottom:10px;">&#129302; AI Recommendations</div>' + adviceHtml + '</div>';
+      }).catch(function(err) { document.getElementById('energy-advisor-body').innerHTML = '<p style="color:#e53935;">Error: ' + (err.message || err) + '</p>'; });
+    });
+  });
+}
+
+// ============================================================
+// MONKEY PATCHES: override original functions with AI-enhanced versions
+// ============================================================
+(function patchOriginal() {
+  originalSpeakAlarm = window.speakAlarm;
+  originalSpeakPSAlarm = window.speakPSAlarm;
+  window.speakAlarm = function(deviceName, alarmType, isReservoir) { correlateAndAnnounce(deviceName, alarmType, null); };
+  window.speakPSAlarm = function(deviceName, alarmType) { correlateAndAnnounce(deviceName, alarmType, null); };
+
+  var originalUpdateDeviceList = window.updateDeviceList;
+  window.updateDeviceList = function(devices) {
+    originalUpdateDeviceList(devices);
+    var list = document.getElementById('device-list');
+    if (!list) return;
+    var items = list.querySelectorAll('li');
+    items.forEach(function(li) {
+      var deviceName = li.querySelector('span') ? li.querySelector('span').innerText : '';
+      if (!deviceName) return;
+      var device = devices.find(function(d) { return d.device === deviceName; });
+      if (!device) return;
+      var isRes = (device.type && device.type.toLowerCase().trim() === 'reservoir') || deviceName.toLowerCase().includes('reservoir');
+      var isPres = (device.type && device.type.toLowerCase().trim() === 'pressure') || deviceName.toLowerCase().includes('pressure');
+      if (isRes) {
+        injectAnomalyBadge(li, deviceName, device.level, true);
+      } else if (isPres) {
+        injectAnomalyBadge(li, deviceName, device.pressure, false);
+      }
+    });
+  };
+
+  var originalUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function() {
+    originalUpdateDashboard();
+    apiGet('getDashboardData').then(function(devices) {
+      updateMaintenanceScore(devices);
+    }).catch(function(e) { console.warn('Maintenance score update failed', e); });
+  };
+
+  var originalShowDeviceDetails = window.showDeviceDetails;
+  window.showDeviceDetails = function(device) {
+    originalShowDeviceDetails(device);
+    setTimeout(function() {
+      var det = document.getElementById('device-details');
+      if (!det) return;
+      var maintHtml = buildMaintenanceBadge(device);
+      if (maintHtml) {
+        var existing = det.querySelector('.ai-maint-badge');
+        if (existing) existing.remove();
+        var div = document.createElement('div');
+        div.className = 'ai-maint-badge';
+        div.innerHTML = maintHtml;
+        det.appendChild(div);
+      }
+    }, 100);
+  };
+
+  var originalRenderRangeChart = window.renderRangeChart;
+  window.renderRangeChart = function() {
+    originalRenderRangeChart();
+    injectForecastDataset();
+  };
+
+  document.querySelectorAll('.top-card[data-tab]').forEach(function(card) {
+    if (card.dataset.tab === 'energy') {
+      card.onclick = function(e) {
+        e.preventDefault();
+        openEnergyAdvisor();
+      };
+    }
+  });
+
+  var originalLogin = window.login;
+  if (originalLogin) {
+    window.login = function() {
+      var result = originalLogin.apply(this, arguments);
+      setTimeout(function() {
+        var fab = document.getElementById('ai-chat-fab');
+        if (fab) fab.style.display = 'flex';
+      }, 1000);
+      return result;
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
