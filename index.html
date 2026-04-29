@@ -2360,6 +2360,9 @@ function updateDeviceList(devices) {
         : '';
       li.innerHTML = '<span>'+d.device+'</span><div class="device-status">'+fi+'<span class="status-indicator '+sc+' '+fb+'"></span><label class="toggle-switch" title="'+(autoOff?'Auto-shutoff active — reservoir is full':'Toggle pump ON/OFF')+'"><input type="checkbox"'+(displayState==='ON'?' checked':'')+'><span class="slider"></span></label></div>'+autoOffBadge;
       var cb = li.querySelector('input[type="checkbox"]');
+      // ---- FIX: capture coordinates directly from device object (no cache dependency) ----
+      var devLat = d.latitude || '';
+      var devLng = d.longitude || '';
       cb.addEventListener('change', function(){
         var ns = cb.checked ? 'ON' : 'OFF';
         // ── Guard: if trying to turn ON while reservoir is full ──
@@ -2391,9 +2394,8 @@ function updateDeviceList(devices) {
           localStorage.setItem('reservoirAutoShutoff', JSON.stringify(reservoirAutoShutoffState));
         }
         localStorage.setItem('desired_' + d.device, ns);
-        // Attach last-known coordinates so the backend row is never blank
-        var _coords = deviceCoordinatesCache[d.device] || {};
-        OfflineQueue.push({ device: d.device, state: ns, latitude: _coords.latitude || '', longitude: _coords.longitude || '' });
+        // Queue command with coordinates directly from device data (never empty)
+        OfflineQueue.push({ device: d.device, state: ns, latitude: devLat, longitude: devLng });
         localStorage.setItem('OfflineQueue', JSON.stringify(OfflineQueue));
         updateDeviceList(devices);
       });
@@ -2486,17 +2488,26 @@ function autoShutoffPumps(devices) {
 
       _addAutoShutoffLog({ pump: cfg.pump, reservoir: cfg.reservoir, level: lv, shutoffLevel: shutoff, action: 'AUTO-OFF', timestamp: ts });
 
-      // FIX: use pumpData's own latitude/longitude (always available) instead of cache
+      // ---- FIX: use pumpData's own latitude/longitude (always available) ----
+      var pumpCoords = {
+        latitude: pumpData.latitude || (deviceCoordinatesCache[cfg.pump] && deviceCoordinatesCache[cfg.pump].latitude) || '',
+        longitude: pumpData.longitude || (deviceCoordinatesCache[cfg.pump] && deviceCoordinatesCache[cfg.pump].longitude) || ''
+      };
+      if (!pumpCoords.latitude || !pumpCoords.longitude) {
+        console.warn('[AGUS] Cannot turn OFF ' + cfg.pump + ' – missing coordinates');
+        showNotification('⚠ Cannot auto‑control ' + cfg.pump + ' – coordinates missing', 'error');
+        return;
+      }
       if (userToken) {
         apiPost('togglePump', {
           device: cfg.pump, token: userToken, reason: 'AUTO_RESERVOIR_FULL',
-          latitude:  pumpData.latitude  || '', longitude: pumpData.longitude || ''
+          latitude: pumpCoords.latitude, longitude: pumpCoords.longitude
         }).then(function(r) { if (r && r.success) updateDashboard(); })
           .catch(function(e) { console.warn('[AutoControl] togglePump failed:', e); });
       } else {
         OfflineQueue.push({
           device: cfg.pump, state: 'OFF',
-          latitude: pumpData.latitude || '', longitude: pumpData.longitude || ''
+          latitude: pumpCoords.latitude, longitude: pumpCoords.longitude
         });
         localStorage.setItem('OfflineQueue', JSON.stringify(OfflineQueue));
       }
@@ -2517,13 +2528,23 @@ function autoShutoffPumps(devices) {
         localStorage.setItem('desired_'   + cfg.pump, 'ON');
         localStorage.setItem('confirmed_' + cfg.pump, 'ON');
 
-        // ── 3. Send toggle-ON command to server (use pumpData coordinates) ──
+        // ---- FIX: same coordinate safety ----
+        var pumpCoordsResume = {
+          latitude: pumpData.latitude || (deviceCoordinatesCache[cfg.pump] && deviceCoordinatesCache[cfg.pump].latitude) || '',
+          longitude: pumpData.longitude || (deviceCoordinatesCache[cfg.pump] && deviceCoordinatesCache[cfg.pump].longitude) || ''
+        };
+        if (!pumpCoordsResume.latitude || !pumpCoordsResume.longitude) {
+          console.warn('[AGUS] Cannot turn ON ' + cfg.pump + ' – missing coordinates');
+          showNotification('⚠ Auto‑resume failed for ' + cfg.pump + ' – coordinates missing', 'error');
+          return;
+        }
+
+        // ── 3. Send toggle-ON command to server ──────────────────────────
         if (userToken) {
           apiPost('togglePump', {
             device: cfg.pump, token: userToken,
             reason: 'AUTO_RESERVOIR_RESUME',
-            latitude:  pumpData.latitude  || '',
-            longitude: pumpData.longitude || ''
+            latitude: pumpCoordsResume.latitude, longitude: pumpCoordsResume.longitude
           }).then(function(r) {
             if (r && r.success) {
               localStorage.removeItem('desired_' + cfg.pump);
@@ -2534,7 +2555,7 @@ function autoShutoffPumps(devices) {
           // Offline – queue for sync
           OfflineQueue.push({
             device: cfg.pump, state: 'ON',
-            latitude: pumpData.latitude || '', longitude: pumpData.longitude || ''
+            latitude: pumpCoordsResume.latitude, longitude: pumpCoordsResume.longitude
           });
           localStorage.setItem('OfflineQueue', JSON.stringify(OfflineQueue));
         }
@@ -2851,7 +2872,7 @@ function openAutoShutoffLog() {
     + '<th style="padding:9px 10px;font-size:10.5px;color:#5575a0;font-weight:800;text-align:left;text-transform:uppercase;">Reservoir</th>'
     + '<th style="padding:9px 10px;font-size:10.5px;color:#5575a0;font-weight:800;text-align:right;text-transform:uppercase;">Level</th>'
     + '<th style="padding:9px 10px;font-size:10.5px;color:#5575a0;font-weight:800;text-align:left;text-transform:uppercase;">Threshold</th>'
-    + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+    + '<tr></thead><tbody>' + rows + '</tbody></table></div>'
     + '<div style="padding:11px 18px;border-top:1px solid #e5eef9;display:flex;gap:8px;background:#f8fbff;">'
     + '<button onclick="_autoShutoffLog=[];localStorage.removeItem(\'autoShutoffLog\');document.getElementById(\'autolog-overlay\').remove();showNotification(\'Log cleared.\',\'info\');" style="padding:7px 16px;background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear Log</button>'
     + '<button onclick="document.getElementById(\'autolog-overlay\').remove()" style="margin-left:auto;padding:7px 18px;background:linear-gradient(135deg,#002b5c,#1d4ed8);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Close</button>'
