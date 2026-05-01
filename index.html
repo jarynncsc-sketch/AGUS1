@@ -2234,10 +2234,10 @@ if (!isNaN(llvl)) {
             'Current: '  + (d.current  || 0) + ' A<br>' +
             'Power: '    + (d.power    || 0) + ' W<br>' +
             'Energy: '   + (d.energy   || 0) + ' kWh<br>' +
-            // ★ v3: show commanded (dashboard) vs actual (ESP32)
+            // ★ v3: show commanded (dashboard) vs actual (Smart Device)
             'Relay: <b style="color:'+(d.commandedRelay?'#22c55e':'#ef4444')+';">'+(d.commandedRelay?'● ON':'● OFF')+'</b>'
-              +(d.relayPending?' <span style="font-size:10px;color:#d97706;">⏳ ESP32 confirming…</span>':' <span style="font-size:10px;color:#94a3b8;">✓ Confirmed</span>')+'<br>'
-            +'ESP32 actual: <span style="color:#94a3b8;font-size:11px;">'+(d.relay?'ON':'OFF')+'</span><br>' +
+              +(d.relayPending?' <span style="font-size:10px;color:#d97706;">⏳ Smart Device confirming…</span>':' <span style="font-size:10px;color:#94a3b8;">✓ Confirmed</span>')+'<br>'
+            +'Smart Device actual: <span style="color:#94a3b8;font-size:11px;">'+(d.relay?'ON':'OFF')+'</span><br>' +
             _effBadge + '<br>' +
             '<button onclick="showHistoricalGraph(\'' + escapeForAttr(d.device) + '\',\'pump\')" style="margin-top:7px;width:100%;padding:5px 0;background:#004080;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;">📊 View Graph</button>' +
           '</div>' +
@@ -2373,8 +2373,8 @@ function updateDeviceList(devices) {
       li.addEventListener('click', function(){selectDevice(d.device);});
     } else {
       // ★ v3: commandedRelay = what dashboard ordered (PropertiesService source of truth)
-      //        relay = what ESP32 actually has (sheet)
-      //        relayPending = they differ (waiting for ESP32 to confirm)
+      //        relay = what Smart Device actually has (sheet)
+      //        relayPending = they differ (waiting for Smart Device to confirm)
       if (d.commandedRelay !== undefined) commandedRelayCache[d.device] = d.commandedRelay;
       var commanded  = commandedRelayCache.hasOwnProperty(d.device) ? commandedRelayCache[d.device] : (d.commandedRelay != null ? d.commandedRelay : (d.relay || 0));
       var switchIsOn = commanded === 1 || commanded === true;
